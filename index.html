@@ -160,7 +160,7 @@
       background:rgba(255,255,255,.05);
       cursor:pointer;
       transition:.12s ease;
-      min-height:130px;
+      min-height:170px;
     }
     .block:hover{border-color:var(--accent);background:var(--accent-soft)}
     .blockTop{
@@ -189,8 +189,6 @@
       line-height:1.45;
       margin-top:8px;
       white-space:pre-wrap;
-      max-height:92px;
-      overflow:hidden;
     }
     .blockFoot{
       margin-top:10px;
@@ -201,6 +199,24 @@
       gap:10px;
     }
     .linkish{color:var(--accent);font-weight:800}
+
+    /* NEW: 3 mini-sections inside each main block */
+    .miniGrid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    .mini{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.04);
+    }
+    .miniTitle{font-weight:900;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .miniBody{
+      font-size:12px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      color:var(--text);
+      max-height:120px;
+      overflow:auto;
+    }
 
     .pre{
       margin-top:0;
@@ -225,6 +241,38 @@
       font-size:13px;
       line-height:1.45;
       text-align:center;
+    }
+
+    /* NEW: ProdSight Answer card in summary */
+    .answerCard{
+      margin-top:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(0,0,0,.20);
+    }
+    .answerTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .answerTitle h3{margin:0;font-size:16px}
+    .pill{
+      font-size:12px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .answerBody{
+      font-size:13px;
+      color:var(--text);
+      white-space:pre-wrap;
+      line-height:1.5;
     }
   </style>
 </head>
@@ -294,31 +342,74 @@
           </div>
         </div>
 
+        <!-- NEW: ProdSight Answer -->
+        <div class="answerCard">
+          <div class="answerTitle">
+            <h3>ProdSight Answer (Gemini)</h3>
+            <span class="pill" id="ansPill">Waiting…</span>
+          </div>
+          <div class="answerBody" id="ansBody">Run analysis to generate a structured recommendation.</div>
+        </div>
+
         <div class="blocks">
+
+          <!-- ServiceNow main block -->
           <div class="block" id="blkSN" onclick="openDetails('servicenow')">
             <div class="blockTop">
               <div class="blockTitle">ServiceNow</div>
               <div class="badge" id="badgeSN">—</div>
             </div>
-            <div class="blockBody" id="sumSN">Awaiting analysis.</div>
+
+            <div class="miniGrid">
+              <div class="mini">
+                <div class="miniTitle">INC Numbers</div>
+                <div class="miniBody" id="snIncList">Awaiting analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Error (last time)</div>
+                <div class="miniBody" id="snErrList">Awaiting analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Resolution (summary)</div>
+                <div class="miniBody" id="snResList">Awaiting analysis.</div>
+              </div>
+            </div>
+
             <div class="blockFoot">
               <span class="mono" id="confSN"></span>
               <span class="linkish">View details →</span>
             </div>
           </div>
 
+          <!-- Mail main block -->
           <div class="block" id="blkMail" onclick="openDetails('mail')">
             <div class="blockTop">
               <div class="blockTitle">Mail</div>
               <div class="badge" id="badgeMail">—</div>
             </div>
-            <div class="blockBody" id="sumMail">Awaiting analysis.</div>
+
+            <div class="miniGrid">
+              <div class="mini">
+                <div class="miniTitle">Subject</div>
+                <div class="miniBody" id="mailSubjList">Awaiting analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Error (last time)</div>
+                <div class="miniBody" id="mailErrList">Awaiting analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Resolution (summary)</div>
+                <div class="miniBody" id="mailResList">Awaiting analysis.</div>
+              </div>
+            </div>
+
             <div class="blockFoot">
               <span class="mono" id="confMail"></span>
               <span class="linkish">View details →</span>
             </div>
           </div>
 
+          <!-- Server Logs main block -->
           <div class="block" id="blkLogs" onclick="openDetails('server_logs')">
             <div class="blockTop">
               <div class="blockTitle">Server Logs</div>
@@ -330,6 +421,7 @@
               <span class="linkish">View details →</span>
             </div>
           </div>
+
         </div>
 
       </div>
@@ -386,8 +478,7 @@
     DEMO_MODE = !!document.getElementById("demoToggle").checked;
 
     if(lastPayload){
-      renderSummary(lastPayload);
-      renderDetails(lastPayload);
+      renderAll(lastPayload);
     }
 
     document.getElementById("status").textContent = DEMO_MODE
@@ -405,8 +496,6 @@
 
   function openDetails(which){
     switchTab("details");
-    // we keep it simple: details is one combined JSON output
-    // can be upgraded to per-section scroll later if needed
   }
 
   // ===================== REDACTION (Client Demo Mode) =====================
@@ -439,6 +528,7 @@
       if(typeof x === "object"){
         const out = {};
         for(const k of Object.keys(x)){
+          // hide raw log excerpts in demo mode
           if(k === "excerpt") out[k] = "[redacted-excerpt]";
           else out[k] = walk(x[k]);
         }
@@ -468,42 +558,120 @@
     return "confidence=" + n.toFixed(3);
   }
 
-  // ===================== RENDERERS =====================
-  function renderSummary(payload){
-    const p = maybeRedact(payload);
+  function asList(lines, max=6){
+    if(!lines || !lines.length) return "Not Found";
+    return lines.slice(0,max).map((x,i)=>`${i+1}) ${x}`).join("\n");
+  }
 
-    const sn = p.servicenow || {};
-    const ml = p.mail || {};
+  // Supports both response shapes:
+  // A) NEW shape: details.servicenow.matches[] / details.mail.matches[]
+  // B) OLD shape: details.servicenow (single object) / details.mail.alert+resolution
+  function getServiceNowMatches(details){
+    const sn = (details && details.servicenow) || {};
+    if(Array.isArray(sn.matches)) return sn.matches;
+    // fallback: single
+    if(sn && (sn.incident_id || sn.error_signature || sn.root_cause)) return [sn];
+    return [];
+  }
+
+  function getMailMatches(details){
+    const m = (details && details.mail) || {};
+    if(Array.isArray(m.matches)) return m.matches;
+
+    // fallback: alert/resolution objects
+    if(m.alert || m.resolution){
+      const alert = m.alert || {};
+      const resolution = m.resolution || {};
+      const subject = resolution.subject || alert.subject || "";
+      const thread_id = resolution.thread_id || alert.thread_id || "";
+      const err = (alert.body || "").split("\n").slice(0,2).join(" ").trim();
+      const res = (resolution.body || "").split("\n").slice(0,4).join(" ").trim();
+      return [{
+        subject,
+        thread_id,
+        error_snippets: err ? [err] : [],
+        resolution_snippets: res ? [res] : []
+      }];
+    }
+    return [];
+  }
+
+  function renderServiceNow(details){
+    const matches = getServiceNowMatches(details);
+
+    const incs = matches.map(m => m.incident_id).filter(Boolean);
+    document.getElementById("snIncList").textContent = incs.length ? incs.join(", ") : "Not Found";
+
+    const errs = matches.map(m => m.error_signature || m.root_cause || "").filter(Boolean);
+    document.getElementById("snErrList").textContent = asList(errs.map(x => String(x).slice(0,160)), 3);
+
+    const res = [];
+    for(const m of matches){
+      const arr = m.resolution || m.resolution_steps || [];
+      if(Array.isArray(arr)) arr.forEach(r => r && res.push(String(r)));
+    }
+    // de-dupe
+    const uniq = [...new Set(res)];
+    document.getElementById("snResList").textContent = asList(uniq.map(x => x.slice(0,180)), 6);
+  }
+
+  function renderMail(details){
+    const matches = getMailMatches(details);
+
+    const subjects = matches.map(m => m.subject).filter(Boolean);
+    document.getElementById("mailSubjList").textContent = subjects.length ? asList(subjects, 6) : "Not Found";
+
+    const errs = [];
+    const ress = [];
+    for(const m of matches){
+      (m.error_snippets || []).forEach(x => x && errs.push(String(x)));
+      (m.resolution_snippets || []).forEach(x => x && ress.push(String(x)));
+    }
+    document.getElementById("mailErrList").textContent = asList(errs.map(x => x.slice(0,180)), 6);
+    document.getElementById("mailResList").textContent = asList(ress.map(x => x.slice(0,180)), 6);
+  }
+
+  function renderLogs(payload){
+    const p = payload;
     const lg = p.server_logs || {};
+    setBadge(document.getElementById("badgeLogs"), !!lg.found);
+    document.getElementById("sumLogs").textContent = (lg.summary || "");
+    document.getElementById("confLogs").textContent = fmtConf(lg.confidence);
+  }
+
+  function renderAnswer(payload){
+    // app.py returns prodsight_answer as a string
+    const ans = (payload && payload.prodsight_answer) ? String(payload.prodsight_answer) : "";
+    document.getElementById("ansBody").textContent = ans || "No LLM answer returned.";
+    document.getElementById("ansPill").textContent = ans ? "Generated" : "Missing";
+  }
+
+  function renderBadges(payload){
+    const sn = payload.servicenow || {};
+    const ml = payload.mail || {};
 
     setBadge(document.getElementById("badgeSN"), !!sn.found);
     setBadge(document.getElementById("badgeMail"), !!ml.found);
-    setBadge(document.getElementById("badgeLogs"), !!lg.found);
 
-    document.getElementById("sumSN").textContent   = sn.summary || "";
-    document.getElementById("sumMail").textContent = ml.summary || "";
-    document.getElementById("sumLogs").textContent = lg.summary || "";
-
-    // show confidence lines if present
-    document.getElementById("confSN").textContent   = fmtConf(sn.confidence);
+    document.getElementById("confSN").textContent = fmtConf(sn.confidence);
     document.getElementById("confMail").textContent = fmtConf(ml.confidence);
-    document.getElementById("confLogs").textContent = fmtConf(lg.confidence);
   }
 
   function renderDetails(payload){
     const p = maybeRedact(payload);
+    document.getElementById("detailsOut").textContent = JSON.stringify(p, null, 2);
+  }
 
-    const out = DEMO_MODE
-      ? { mode: "Client Demo Mode (redacted)", details: (p.details || {}) }
-      : {
-          servicenow: p.servicenow,
-          mail: p.mail,
-          server_logs: p.server_logs,
-          fallback: p.fallback,
-          details: p.details
-        };
+  function renderAll(payload){
+    const p = maybeRedact(payload);
+    lastPayload = payload;
 
-    document.getElementById("detailsOut").textContent = JSON.stringify(out, null, 2);
+    renderBadges(p);
+    renderServiceNow((p.details || {}));
+    renderMail((p.details || {}));
+    renderLogs(p);
+    renderAnswer(p);
+    renderDetails(payload); // renderDetails does redaction internally
   }
 
   // ===================== MAIN ACTION =====================
@@ -530,16 +698,15 @@
       }
 
       const data = await r.json();
-      lastPayload = data;
-
-      renderSummary(data);
-      renderDetails(data);
+      renderAll(data);
 
       status.textContent = DEMO_MODE
         ? "Status: Done (Client Demo Mode ON)"
         : "Status: Done";
     }catch(e){
       status.textContent = "Status: Error";
+      document.getElementById("ansPill").textContent = "Error";
+      document.getElementById("ansBody").textContent = String(e && e.message ? e.message : e);
       document.getElementById("detailsOut").textContent = String(e && e.message ? e.message : e);
     }
   }
@@ -547,14 +714,31 @@
   function clearAll(){
     document.getElementById("inp").value = "";
     document.getElementById("status").textContent = "Status: Idle";
-    document.getElementById("sumSN").textContent = "Awaiting analysis.";
-    document.getElementById("sumMail").textContent = "Awaiting analysis.";
+
+    document.getElementById("badgeSN").textContent = "—";
+    document.getElementById("badgeMail").textContent = "—";
+    document.getElementById("badgeLogs").textContent = "—";
+
+    document.getElementById("snIncList").textContent = "Awaiting analysis.";
+    document.getElementById("snErrList").textContent = "Awaiting analysis.";
+    document.getElementById("snResList").textContent = "Awaiting analysis.";
+
+    document.getElementById("mailSubjList").textContent = "Awaiting analysis.";
+    document.getElementById("mailErrList").textContent = "Awaiting analysis.";
+    document.getElementById("mailResList").textContent = "Awaiting analysis.";
+
     document.getElementById("sumLogs").textContent = "Awaiting analysis.";
+
     document.getElementById("confSN").textContent = "";
     document.getElementById("confMail").textContent = "";
     document.getElementById("confLogs").textContent = "";
+
+    document.getElementById("ansPill").textContent = "Waiting…";
+    document.getElementById("ansBody").textContent = "Run analysis to generate a structured recommendation.";
+
     document.getElementById("detailsOut").textContent = "Run analysis to view details.";
     lastPayload = null;
+
     switchTab("summary");
   }
 </script>
