@@ -21,7 +21,6 @@
       --warn:#ffdd6a;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
-
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -31,7 +30,6 @@
         radial-gradient(1200px 700px at 10% 10%, #17244a 0%, var(--bg) 55%),
         linear-gradient(180deg,#0e1530,var(--bg));
     }
-
     .container{max-width:1200px;margin:0 auto;padding:22px}
 
     .hero{
@@ -160,7 +158,7 @@
       background:rgba(255,255,255,.05);
       cursor:pointer;
       transition:.12s ease;
-      min-height:170px;
+      min-height:140px;
     }
     .block:hover{border-color:var(--accent);background:var(--accent-soft)}
     .blockTop{
@@ -183,6 +181,7 @@
     .badge.ok{border-color:rgba(121,255,166,.35);background:rgba(121,255,166,.10);color:var(--ok)}
     .badge.no{border-color:rgba(255,106,106,.35);background:rgba(255,106,106,.10);color:var(--danger)}
     .badge.warn{border-color:rgba(255,221,106,.35);background:rgba(255,221,106,.12);color:var(--warn)}
+
     .blockBody{
       font-size:13px;
       color:var(--muted);
@@ -199,24 +198,6 @@
       gap:10px;
     }
     .linkish{color:var(--accent);font-weight:800}
-
-    /* NEW: 3 mini-sections inside each main block */
-    .miniGrid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
-    .mini{
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:10px;
-      background:rgba(255,255,255,.04);
-    }
-    .miniTitle{font-weight:900;font-size:12px;color:var(--muted);margin-bottom:6px}
-    .miniBody{
-      font-size:12px;
-      line-height:1.45;
-      white-space:pre-wrap;
-      color:var(--text);
-      max-height:120px;
-      overflow:auto;
-    }
 
     .pre{
       margin-top:0;
@@ -243,7 +224,7 @@
       text-align:center;
     }
 
-    /* NEW: ProdSight Answer card in summary */
+    /* ProdSight Answer card (Summary) */
     .answerCard{
       margin-top:14px;
       border:1px solid var(--border);
@@ -274,6 +255,54 @@
       white-space:pre-wrap;
       line-height:1.5;
     }
+
+    /* Details layout */
+    .detailGrid{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+    .detailCard{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(255,255,255,.05);
+    }
+    .detailHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .detailHeader h3{margin:0;font-size:16px}
+    .detailCols{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:10px;
+    }
+    @media(max-width:980px){.detailCols{grid-template-columns:1fr}}
+    .detailCols.two{grid-template-columns:1fr 1fr}
+    @media(max-width:980px){.detailCols.two{grid-template-columns:1fr}}
+
+    .mini{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.04);
+      min-height:90px;
+    }
+    .miniTitle{font-weight:900;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .miniBody{
+      font-size:12px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      color:var(--text);
+      max-height:220px;
+      overflow:auto;
+      font-family:var(--mono);
+    }
   </style>
 </head>
 
@@ -302,7 +331,7 @@
         <div class="section">
           <h2>Production Issue Analysis</h2>
           <p>
-            Paste an error or log snippet. ProdSight correlates ServiceNow, Mail, and Server Logs (internal-first evidence).
+            Paste an error or log snippet. Summary shows only counts. Click any block to view details.
           </p>
         </div>
 
@@ -319,30 +348,7 @@
           <span class="mono">POST /analyze</span>
         </div>
 
-        <!-- Client Demo Mode -->
-        <div class="section" style="margin-top:12px">
-          <h2>Client Demo Mode</h2>
-          <p>
-            When enabled, ProdSight hides sensitive evidence fields and uses safe demo formatting for client showcase.
-          </p>
-
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
-            <label style="margin:0;display:flex;align-items:center;gap:10px;cursor:pointer">
-              <input id="demoToggle" type="checkbox" onchange="applyDemoMode()" />
-              <span style="font-weight:900">Client Demo Mode (redacted)</span>
-            </label>
-
-            <span class="mono" style="color:var(--muted)">• One-click sample errors for demo flow</span>
-          </div>
-
-          <div class="buttons" style="justify-content:flex-start;margin-top:12px">
-            <button class="ghost" onclick="loadSample(1)">Sample: Java NPE</button>
-            <button class="ghost" onclick="loadSample(2)">Sample: OOM</button>
-            <button class="ghost" onclick="loadSample(3)">Sample: Timeout</button>
-          </div>
-        </div>
-
-        <!-- NEW: ProdSight Answer -->
+        <!-- ProdSight Answer -->
         <div class="answerCard">
           <div class="answerTitle">
             <h3>ProdSight Answer (Gemini)</h3>
@@ -353,63 +359,33 @@
 
         <div class="blocks">
 
-          <!-- ServiceNow main block -->
+          <!-- ServiceNow summary block (COUNT ONLY) -->
           <div class="block" id="blkSN" onclick="openDetails('servicenow')">
             <div class="blockTop">
               <div class="blockTitle">ServiceNow</div>
               <div class="badge" id="badgeSN">—</div>
             </div>
-
-            <div class="miniGrid">
-              <div class="mini">
-                <div class="miniTitle">INC Numbers</div>
-                <div class="miniBody" id="snIncList">Awaiting analysis.</div>
-              </div>
-              <div class="mini">
-                <div class="miniTitle">Error (last time)</div>
-                <div class="miniBody" id="snErrList">Awaiting analysis.</div>
-              </div>
-              <div class="mini">
-                <div class="miniTitle">Resolution (summary)</div>
-                <div class="miniBody" id="snResList">Awaiting analysis.</div>
-              </div>
-            </div>
-
+            <div class="blockBody" id="sumSN">Awaiting analysis.</div>
             <div class="blockFoot">
               <span class="mono" id="confSN"></span>
               <span class="linkish">View details →</span>
             </div>
           </div>
 
-          <!-- Mail main block -->
+          <!-- Mail summary block (COUNT ONLY) -->
           <div class="block" id="blkMail" onclick="openDetails('mail')">
             <div class="blockTop">
               <div class="blockTitle">Mail</div>
               <div class="badge" id="badgeMail">—</div>
             </div>
-
-            <div class="miniGrid">
-              <div class="mini">
-                <div class="miniTitle">Subject</div>
-                <div class="miniBody" id="mailSubjList">Awaiting analysis.</div>
-              </div>
-              <div class="mini">
-                <div class="miniTitle">Error (last time)</div>
-                <div class="miniBody" id="mailErrList">Awaiting analysis.</div>
-              </div>
-              <div class="mini">
-                <div class="miniTitle">Resolution (summary)</div>
-                <div class="miniBody" id="mailResList">Awaiting analysis.</div>
-              </div>
-            </div>
-
+            <div class="blockBody" id="sumMail">Awaiting analysis.</div>
             <div class="blockFoot">
               <span class="mono" id="confMail"></span>
               <span class="linkish">View details →</span>
             </div>
           </div>
 
-          <!-- Server Logs main block -->
+          <!-- Server Logs summary block (COUNT/FOUND ONLY) -->
           <div class="block" id="blkLogs" onclick="openDetails('server_logs')">
             <div class="blockTop">
               <div class="blockTitle">Server Logs</div>
@@ -431,12 +407,83 @@
         <div class="section">
           <h2>Detailed Evidence</h2>
           <p>
-            Full correlation output from ServiceNow, Mail, and Server Logs. In Client Demo Mode, sensitive fields are redacted.
+            ServiceNow and Mail show 3 sections each. Server Logs shows 2 sections: Log Path and Exact Error.
           </p>
         </div>
 
-        <div class="section">
-          <pre id="detailsOut" class="pre">Run analysis to view details.</pre>
+        <div class="detailGrid">
+
+          <!-- ServiceNow details (3 sections) -->
+          <div class="detailCard" id="detailSN">
+            <div class="detailHeader">
+              <h3>ServiceNow</h3>
+              <span class="badge" id="badgeSN2">—</span>
+            </div>
+            <div class="detailCols">
+              <div class="mini">
+                <div class="miniTitle">INC Numbers</div>
+                <div class="miniBody" id="snIncList">Run analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Error (last time)</div>
+                <div class="miniBody" id="snErrList">Run analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Resolution (last time)</div>
+                <div class="miniBody" id="snResList">Run analysis.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mail details (3 sections) -->
+          <div class="detailCard" id="detailMail">
+            <div class="detailHeader">
+              <h3>Mail</h3>
+              <span class="badge" id="badgeMail2">—</span>
+            </div>
+            <div class="detailCols">
+              <div class="mini">
+                <div class="miniTitle">Subjects</div>
+                <div class="miniBody" id="mailSubjList">Run analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Error (last time)</div>
+                <div class="miniBody" id="mailErrList">Run analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Resolution (summary)</div>
+                <div class="miniBody" id="mailResList">Run analysis.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Server Logs details (2 sections) -->
+          <div class="detailCard" id="detailLogs">
+            <div class="detailHeader">
+              <h3>Server Logs</h3>
+              <span class="badge" id="badgeLogs2">—</span>
+            </div>
+            <div class="detailCols two">
+              <div class="mini">
+                <div class="miniTitle">Log Path</div>
+                <div class="miniBody" id="logPathBox">Run analysis.</div>
+              </div>
+              <div class="mini">
+                <div class="miniTitle">Exact Error</div>
+                <div class="miniBody" id="logErrBox">Run analysis.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Raw JSON (optional, for debug) -->
+          <div class="detailCard">
+            <div class="detailHeader">
+              <h3>Raw Payload (Debug)</h3>
+              <span class="pill">Optional</span>
+            </div>
+            <pre id="detailsOut" class="pre">Run analysis to view payload.</pre>
+          </div>
+
         </div>
 
         <div class="buttons">
@@ -455,36 +502,13 @@
 
 <script>
   // ===================== CONFIG =====================
-  // Replace with your Render backend URL
+  // Replace with your Render backend URL:
+  // Example: https://prodsight-backend.onrender.com
   const API_BASE = "https://YOUR-RENDER-BACKEND.onrender.com";
   const ANALYZE_URL = API_BASE + "/analyze";
 
   // ===================== STATE =====================
-  let DEMO_MODE = false;
   let lastPayload = null;
-
-  const SAMPLES = {
-    1: "java.lang.NullPointerException at com.company.billing.InvoiceService.processInvoice(InvoiceService.java:214)",
-    2: "java.lang.OutOfMemoryError: Java heap space during batch job recon-nightly",
-    3: "java.net.SocketTimeoutException: Read timed out calling https://upstream.api/orders"
-  };
-
-  function loadSample(n){
-    document.getElementById("inp").value = SAMPLES[n] || "";
-    document.getElementById("status").textContent = "Status: Sample loaded";
-  }
-
-  function applyDemoMode(){
-    DEMO_MODE = !!document.getElementById("demoToggle").checked;
-
-    if(lastPayload){
-      renderAll(lastPayload);
-    }
-
-    document.getElementById("status").textContent = DEMO_MODE
-      ? "Status: Client Demo Mode ON (redacted)"
-      : "Status: Client Demo Mode OFF";
-  }
 
   // ===================== TABS =====================
   function switchTab(which){
@@ -496,47 +520,17 @@
 
   function openDetails(which){
     switchTab("details");
-  }
-
-  // ===================== REDACTION (Client Demo Mode) =====================
-  function redactText(s){
-    if(!s) return s;
-    s = String(s);
-
-    // Email addresses
-    s = s.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]");
-
-    // Log paths
-    s = s.replace(/\/var\/log\/[A-Za-z0-9_\-./]+/g, "[redacted-log-path]");
-
-    // Correlation IDs like CORR-...
-    s = s.replace(/\bCORR-[A-Z0-9\-]+\b/g, "[redacted-correlation-id]");
-
-    // Internal-ish domains
-    s = s.replace(/\b[a-z0-9.-]*\.(local|corp|internal)\b/gi, "[redacted-host]");
-
-    return s;
-  }
-
-  function maybeRedact(obj){
-    if(!DEMO_MODE) return obj;
-
-    const walk = (x) => {
-      if(x === null || x === undefined) return x;
-      if(typeof x === "string") return redactText(x);
-      if(Array.isArray(x)) return x.map(walk);
-      if(typeof x === "object"){
-        const out = {};
-        for(const k of Object.keys(x)){
-          // hide raw log excerpts in demo mode
-          if(k === "excerpt") out[k] = "[redacted-excerpt]";
-          else out[k] = walk(x[k]);
-        }
-        return out;
-      }
-      return x;
+    // Scroll to relevant section for nice UX
+    const map = {
+      servicenow: "detailSN",
+      mail: "detailMail",
+      server_logs: "detailLogs"
     };
-    return walk(obj);
+    const id = map[which] || "detailSN";
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+    }, 50);
   }
 
   // ===================== UI HELPERS =====================
@@ -558,34 +552,35 @@
     return "confidence=" + n.toFixed(3);
   }
 
-  function asList(lines, max=6){
+  function asList(lines, max=8){
     if(!lines || !lines.length) return "Not Found";
     return lines.slice(0,max).map((x,i)=>`${i+1}) ${x}`).join("\n");
   }
 
-  // Supports both response shapes:
-  // A) NEW shape: details.servicenow.matches[] / details.mail.matches[]
-  // B) OLD shape: details.servicenow (single object) / details.mail.alert+resolution
+  // Supports:
+  // A) NEW: details.servicenow.matches[]
+  // B) OLD: details.servicenow single object
   function getServiceNowMatches(details){
     const sn = (details && details.servicenow) || {};
     if(Array.isArray(sn.matches)) return sn.matches;
-    // fallback: single
     if(sn && (sn.incident_id || sn.error_signature || sn.root_cause)) return [sn];
     return [];
   }
 
+  // Supports:
+  // A) NEW: details.mail.matches[]
+  // B) OLD: details.mail.alert/resolution
   function getMailMatches(details){
     const m = (details && details.mail) || {};
     if(Array.isArray(m.matches)) return m.matches;
 
-    // fallback: alert/resolution objects
     if(m.alert || m.resolution){
       const alert = m.alert || {};
       const resolution = m.resolution || {};
       const subject = resolution.subject || alert.subject || "";
       const thread_id = resolution.thread_id || alert.thread_id || "";
       const err = (alert.body || "").split("\n").slice(0,2).join(" ").trim();
-      const res = (resolution.body || "").split("\n").slice(0,4).join(" ").trim();
+      const res = (resolution.body || "").split("\n").slice(0,6).join(" ").trim();
       return [{
         subject,
         thread_id,
@@ -596,30 +591,53 @@
     return [];
   }
 
-  function renderServiceNow(details){
+  function renderSummaryCounts(payload){
+    const details = payload.details || {};
+
+    // ServiceNow count
+    const snMatches = getServiceNowMatches(details);
+    const snCount = snMatches.length;
+    document.getElementById("sumSN").textContent =
+      snCount ? `Total matching incidents: ${snCount}` : "Total matching incidents: 0";
+
+    // Mail count
+    const mailMatches = getMailMatches(details);
+    const mailCount = mailMatches.length;
+    document.getElementById("sumMail").textContent =
+      mailCount ? `Total matching threads: ${mailCount}` : "Total matching threads: 0";
+
+    // Logs one-liner
+    const lg = payload.server_logs || {};
+    const found = !!lg.found;
+    document.getElementById("sumLogs").textContent =
+      found ? "Server log reference found. (Click to view details)" : "No server log reference found.";
+  }
+
+  function renderDetailsServiceNow(payload){
+    const details = payload.details || {};
     const matches = getServiceNowMatches(details);
 
     const incs = matches.map(m => m.incident_id).filter(Boolean);
     document.getElementById("snIncList").textContent = incs.length ? incs.join(", ") : "Not Found";
 
-    const errs = matches.map(m => m.error_signature || m.root_cause || "").filter(Boolean);
-    document.getElementById("snErrList").textContent = asList(errs.map(x => String(x).slice(0,160)), 3);
+    const errs = matches.map(m => (m.error_signature || m.root_cause || "")).filter(Boolean);
+    document.getElementById("snErrList").textContent = asList(errs.map(x => String(x).slice(0,240)), 8);
 
     const res = [];
     for(const m of matches){
       const arr = m.resolution || m.resolution_steps || [];
       if(Array.isArray(arr)) arr.forEach(r => r && res.push(String(r)));
     }
-    // de-dupe
     const uniq = [...new Set(res)];
-    document.getElementById("snResList").textContent = asList(uniq.map(x => x.slice(0,180)), 6);
+    document.getElementById("snResList").textContent = asList(uniq.map(x => x.slice(0,280)), 10);
   }
 
-  function renderMail(details){
+  function renderDetailsMail(payload){
+    const details = payload.details || {};
     const matches = getMailMatches(details);
 
     const subjects = matches.map(m => m.subject).filter(Boolean);
-    document.getElementById("mailSubjList").textContent = subjects.length ? asList(subjects, 6) : "Not Found";
+    document.getElementById("mailSubjList").textContent = subjects.length ? asList(subjects, 10) : "Not Found";
 
     const errs = [];
     const ress = [];
@@ -627,51 +645,63 @@
       (m.error_snippets || []).forEach(x => x && errs.push(String(x)));
       (m.resolution_snippets || []).forEach(x => x && ress.push(String(x)));
     }
-    document.getElementById("mailErrList").textContent = asList(errs.map(x => x.slice(0,180)), 6);
-    document.getElementById("mailResList").textContent = asList(ress.map(x => x.slice(0,180)), 6);
+    document.getElementById("mailErrList").textContent = asList(errs.map(x => x.slice(0,280)), 10);
+    document.getElementById("mailResList").textContent = asList(ress.map(x => x.slice(0,280)), 12);
   }
 
-  function renderLogs(payload){
-    const p = payload;
-    const lg = p.server_logs || {};
-    setBadge(document.getElementById("badgeLogs"), !!lg.found);
-    document.getElementById("sumLogs").textContent = (lg.summary || "");
-    document.getElementById("confLogs").textContent = fmtConf(lg.confidence);
-  }
+  function renderDetailsLogs(payload){
+    const lg = payload.server_logs || {};
+    const details = payload.details || {};
+    const logs = details.server_logs || {};
 
-  function renderAnswer(payload){
-    // app.py returns prodsight_answer as a string
-    const ans = (payload && payload.prodsight_answer) ? String(payload.prodsight_answer) : "";
-    document.getElementById("ansBody").textContent = ans || "No LLM answer returned.";
-    document.getElementById("ansPill").textContent = ans ? "Generated" : "Missing";
+    // Log path box (from details.server_logs.log_path if available; else summary)
+    const logPath = logs.log_path || (lg.summary || "");
+    document.getElementById("logPathBox").textContent = logPath ? String(logPath) : "Not Found";
+
+    // Exact error box: show the pasted input error (source-of-truth for “exact error”)
+    const exact = (document.getElementById("inp").value || "").trim();
+    document.getElementById("logErrBox").textContent = exact ? exact : "Not Provided";
   }
 
   function renderBadges(payload){
     const sn = payload.servicenow || {};
     const ml = payload.mail || {};
+    const lg = payload.server_logs || {};
 
     setBadge(document.getElementById("badgeSN"), !!sn.found);
     setBadge(document.getElementById("badgeMail"), !!ml.found);
+    setBadge(document.getElementById("badgeLogs"), !!lg.found);
+
+    setBadge(document.getElementById("badgeSN2"), !!sn.found);
+    setBadge(document.getElementById("badgeMail2"), !!ml.found);
+    setBadge(document.getElementById("badgeLogs2"), !!lg.found);
 
     document.getElementById("confSN").textContent = fmtConf(sn.confidence);
     document.getElementById("confMail").textContent = fmtConf(ml.confidence);
+    document.getElementById("confLogs").textContent = fmtConf(lg.confidence);
   }
 
-  function renderDetails(payload){
-    const p = maybeRedact(payload);
-    document.getElementById("detailsOut").textContent = JSON.stringify(p, null, 2);
+  function renderAnswer(payload){
+    const ans = (payload && payload.prodsight_answer) ? String(payload.prodsight_answer) : "";
+    document.getElementById("ansBody").textContent = ans || "No LLM answer returned.";
+    document.getElementById("ansPill").textContent = ans ? "Generated" : "Missing";
+  }
+
+  function renderRaw(payload){
+    document.getElementById("detailsOut").textContent = JSON.stringify(payload, null, 2);
   }
 
   function renderAll(payload){
-    const p = maybeRedact(payload);
     lastPayload = payload;
+    renderBadges(payload);
+    renderAnswer(payload);
+    renderSummaryCounts(payload);
 
-    renderBadges(p);
-    renderServiceNow((p.details || {}));
-    renderMail((p.details || {}));
-    renderLogs(p);
-    renderAnswer(p);
-    renderDetails(payload); // renderDetails does redaction internally
+    // Details tab content
+    renderDetailsServiceNow(payload);
+    renderDetailsMail(payload);
+    renderDetailsLogs(payload);
+    renderRaw(payload);
   }
 
   // ===================== MAIN ACTION =====================
@@ -699,10 +729,7 @@
 
       const data = await r.json();
       renderAll(data);
-
-      status.textContent = DEMO_MODE
-        ? "Status: Done (Client Demo Mode ON)"
-        : "Status: Done";
+      status.textContent = "Status: Done";
     }catch(e){
       status.textContent = "Status: Error";
       document.getElementById("ansPill").textContent = "Error";
@@ -718,15 +745,12 @@
     document.getElementById("badgeSN").textContent = "—";
     document.getElementById("badgeMail").textContent = "—";
     document.getElementById("badgeLogs").textContent = "—";
+    document.getElementById("badgeSN2").textContent = "—";
+    document.getElementById("badgeMail2").textContent = "—";
+    document.getElementById("badgeLogs2").textContent = "—";
 
-    document.getElementById("snIncList").textContent = "Awaiting analysis.";
-    document.getElementById("snErrList").textContent = "Awaiting analysis.";
-    document.getElementById("snResList").textContent = "Awaiting analysis.";
-
-    document.getElementById("mailSubjList").textContent = "Awaiting analysis.";
-    document.getElementById("mailErrList").textContent = "Awaiting analysis.";
-    document.getElementById("mailResList").textContent = "Awaiting analysis.";
-
+    document.getElementById("sumSN").textContent = "Awaiting analysis.";
+    document.getElementById("sumMail").textContent = "Awaiting analysis.";
     document.getElementById("sumLogs").textContent = "Awaiting analysis.";
 
     document.getElementById("confSN").textContent = "";
@@ -736,7 +760,18 @@
     document.getElementById("ansPill").textContent = "Waiting…";
     document.getElementById("ansBody").textContent = "Run analysis to generate a structured recommendation.";
 
-    document.getElementById("detailsOut").textContent = "Run analysis to view details.";
+    document.getElementById("snIncList").textContent = "Run analysis.";
+    document.getElementById("snErrList").textContent = "Run analysis.";
+    document.getElementById("snResList").textContent = "Run analysis.";
+
+    document.getElementById("mailSubjList").textContent = "Run analysis.";
+    document.getElementById("mailErrList").textContent = "Run analysis.";
+    document.getElementById("mailResList").textContent = "Run analysis.";
+
+    document.getElementById("logPathBox").textContent = "Run analysis.";
+    document.getElementById("logErrBox").textContent = "Run analysis.";
+
+    document.getElementById("detailsOut").textContent = "Run analysis to view payload.";
     lastPayload = null;
 
     switchTab("summary");
