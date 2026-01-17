@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ProdSight – Production Intelligence for Faster Resolution</title>
+
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#111a33;
+      --panel-soft:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.14);
+      --text:#e9eeff;
+      --muted:#aab6d6;
+      --accent:#6aa6ff;
+      --accent-soft:rgba(106,166,255,.15);
+      --radius:16px;
+      --danger:#ff6a6a;
+      --ok:#79ffa6;
+      --warn:#ffdd6a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 10% 10%, #17244a 0%, var(--bg) 55%),
+        linear-gradient(180deg,#0e1530,var(--bg));
+    }
+
+    .container{max-width:1200px;margin:0 auto;padding:22px}
+
+    .hero{
+      text-align:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:26px 18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.3);
+    }
+    .hero h1{margin:0;font-size:36px}
+    .hero p{margin:10px 0 0;color:var(--muted);font-size:16px}
+    .hero .sub{margin-top:8px;font-size:13px;color:var(--muted)}
+    .mono{font-family:var(--mono)}
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:14px;
+    }
+    .tab{
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--muted);
+      cursor:pointer;
+      user-select:none;
+      transition:.12s ease;
+      font-weight:800;
+      font-size:13px;
+    }
+    .tab:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--text)}
+    .tab.active{
+      border-color:var(--accent);
+      background:linear-gradient(180deg,#7bb1ff,#5a90ff);
+      color:#08142f;
+    }
+
+    .grid{margin-top:18px;display:grid;grid-template-columns:1fr;gap:16px}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:0 18px 40px rgba(0,0,0,.35);
+    }
+
+    label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+    textarea{
+      width:100%;
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      outline:none;
+      min-height:180px;
+      resize:vertical;
+      line-height:1.5;
+      font-family:var(--mono);
+    }
+    textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+    .buttons{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+    button{
+      min-width:170px;
+      padding:12px 18px;
+      border-radius:14px;
+      border:none;
+      font-weight:900;
+      cursor:pointer;
+      background:linear-gradient(180deg,#7bb1ff,#5a90ff);
+      color:#08142f;
+    }
+    .ghost{
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      border:1px solid var(--border);
+      font-weight:800;
+    }
+
+    .statusRow{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .panel{display:none}
+    .panel.active{display:block}
+
+    .section{
+      margin-top:12px;
+      padding:14px;
+      background:var(--panel-soft);
+      border:1px solid var(--border);
+      border-radius:14px;
+    }
+    .section h2{margin:0;font-size:18px}
+
+    .blocks{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:12px;
+    }
+    @media(max-width:980px){.blocks{grid-template-columns:1fr}}
+
+    .block{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(255,255,255,.05);
+      cursor:pointer;
+      transition:.12s ease;
+      min-height:130px;
+    }
+    .block:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+    .blockTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:6px;
+    }
+    .blockTitle{font-weight:900}
+
+    .badge{
+      font-size:12px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      background:rgba(255,255,255,.06);
+    }
+    .badge.ok{border-color:rgba(121,255,166,.35);background:rgba(121,255,166,.10);color:var(--ok)}
+    .badge.no{border-color:rgba(255,106,106,.35);background:rgba(255,106,106,.10);color:var(--danger)}
+    .badge.warn{border-color:rgba(255,221,106,.35);background:rgba(255,221,106,.12);color:var(--warn)}
+
+    .blockBody{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.45;
+      margin-top:8px;
+      white-space:pre-wrap;
+      max-height:92px;
+      overflow:hidden;
+    }
+    .blockFoot{
+      margin-top:10px;
+      display:flex;
+      justify-content:space-between;
+      color:var(--muted);
+      font-size:12px;
+      gap:10px;
+    }
+    .linkish{color:var(--accent);font-weight:800}
+
+    .footerInfo{
+      margin-top:14px;
+      padding-top:10px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="hero">
+    <h1>ProdSight</h1>
+    <p>Production Intelligence for Faster Resolution</p>
+    <div class="sub">
+      <span class="mono">Proprietary solution by</span> <strong>TCS</strong>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tabSummary" onclick="switchTab('summary')">Summary</div>
+      <div class="tab" id="tabDetails" onclick="switchTab('details')">Details</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+
+      <!-- SUMMARY -->
+      <div class="panel active" id="panelSummary">
+        <div class="section">
+          <h2>Production Issue Analysis</h2>
+          <p style="margin-top:8px;color:var(--muted)">
+            Paste an error or log snippet. ProdSight correlates ServiceNow, Mail, and Server Logs.
+          </p>
+        </div>
+
+        <label>Error / Stack trace</label>
+        <textarea id="inp" placeholder="Paste the production error here..."></textarea>
+
+        <div class="buttons">
+          <button onclick="runAnalyze()">Analyze</button>
+          <button class="ghost" onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="statusRow">
+          <span id="status">Status: Idle</span>
+          <span class="mono">POST /analyze</span>
+        </div>
+
+        <div class="blocks">
+          <div class="block" onclick="switchTab('details')">
+            <div class="blockTop">
+              <div class="blockTitle">ServiceNow</div>
+              <div class="badge" id="badgeSN">—</div>
+            </div>
+            <div class="blockBody" id="sumSN">Awaiting analysis.</div>
+            <div class="blockFoot">
+              <span class="mono" id="confSN"></span>
+              <span class="linkish">View details →</span>
+            </div>
+          </div>
+
+          <div class="block" onclick="switchTab('details')">
+            <div class="blockTop">
+              <div class="blockTitle">Mail</div>
+              <div class="badge" id="badgeMail">—</div>
+            </div>
+            <div class="blockBody" id="sumMail">Awaiting analysis.</div>
+            <div class="blockFoot">
+              <span class="mono" id="confMail"></span>
+              <span class="linkish">View details →</span>
+            </div>
+          </div>
+
+          <div class="block" onclick="switchTab('details')">
+            <div class="blockTop">
+              <div class="blockTitle">Server Logs</div>
+              <div class="badge" id="badgeLogs">—</div>
+            </div>
+            <div class="blockBody" id="sumLogs">Awaiting analysis.</div>
+            <div class="blockFoot">
+              <span class="mono" id="confLogs"></span>
+              <span class="linkish">View details →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAILS -->
+      <div class="panel" id="panelDetails">
+        <div class="section">
+          <h2>Detailed Evidence</h2>
+          <p style="margin-top:8px;color:var(--muted)">
+            Full correlation output from ServiceNow, Mail, and Server Logs.
+          </p>
+        </div>
+
+        <div class="section">
+          <pre id="detailsOut" class="mono">Run analysis to view details.</pre>
+        </div>
+
+        <div class="buttons">
+          <button class="ghost" onclick="switchTab('summary')">Back to Summary</button>
+        </div>
+      </div>
+
+      <div class="footerInfo">
+        <strong>ProdSight</strong> — Production Intelligence for Faster Resolution<br/>
+        Proprietary solution by <strong>TCS</strong>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = "https://YOUR-RENDER-BACKEND.onrender.com";
+  async function runAnalyze(){
+    const t = document.getElementById("inp").value.trim();
+    if(!t) return;
+    document.getElementById("status").textContent="Status: Analyzing…";
+
+    const r = await fetch(API_BASE+"/analyze",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({error_text:t})
+    });
+    const d = await r.json();
+
+    document.getElementById("sumSN").textContent = d.servicenow.summary;
+    document.getElementById("sumMail").textContent = d.mail.summary;
+    document.getElementById("sumLogs").textContent = d.server_logs.summary;
+
+    document.getElementById("detailsOut").textContent =
+      JSON.stringify(d.details,null,2);
+
+    document.getElementById("status").textContent="Status: Done";
+  }
+  function clearAll(){
+    document.getElementById("inp").value="";
+    document.getElementById("status").textContent="Status: Idle";
+  }
+  function switchTab(x){
+    document.getElementById("panelSummary").classList.toggle("active",x==="summary");
+    document.getElementById("panelDetails").classList.toggle("active",x==="details");
+    document.getElementById("tabSummary").classList.toggle("active",x==="summary");
+    document.getElementById("tabDetails").classList.toggle("active",x==="details");
+  }
+</script>
+</body>
+</html>
