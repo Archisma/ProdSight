@@ -143,6 +143,7 @@
       border-radius:14px;
     }
     .section h2{margin:0;font-size:18px}
+    .section p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
 
     .blocks{
       margin-top:14px;
@@ -162,7 +163,6 @@
       min-height:130px;
     }
     .block:hover{border-color:var(--accent);background:var(--accent-soft)}
-
     .blockTop{
       display:flex;
       align-items:center;
@@ -171,7 +171,6 @@
       margin-bottom:6px;
     }
     .blockTitle{font-weight:900}
-
     .badge{
       font-size:12px;
       padding:4px 9px;
@@ -179,11 +178,11 @@
       border:1px solid var(--border);
       color:var(--muted);
       background:rgba(255,255,255,.06);
+      white-space:nowrap;
     }
     .badge.ok{border-color:rgba(121,255,166,.35);background:rgba(121,255,166,.10);color:var(--ok)}
     .badge.no{border-color:rgba(255,106,106,.35);background:rgba(255,106,106,.10);color:var(--danger)}
     .badge.warn{border-color:rgba(255,221,106,.35);background:rgba(255,221,106,.12);color:var(--warn)}
-
     .blockBody{
       font-size:13px;
       color:var(--muted);
@@ -202,6 +201,21 @@
       gap:10px;
     }
     .linkish{color:var(--accent);font-weight:800}
+
+    .pre{
+      margin-top:0;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.25);
+      font-family:var(--mono);
+      white-space:pre-wrap;
+      color:var(--text);
+      font-size:12px;
+      line-height:1.5;
+      overflow:auto;
+      max-height:60vh;
+    }
 
     .footerInfo{
       margin-top:14px;
@@ -225,7 +239,7 @@
       <span class="mono">Proprietary solution by</span> <strong>TCS</strong>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" role="tablist" aria-label="ProdSight Tabs">
       <div class="tab active" id="tabSummary" onclick="switchTab('summary')">Summary</div>
       <div class="tab" id="tabDetails" onclick="switchTab('details')">Details</div>
     </div>
@@ -234,12 +248,13 @@
   <div class="grid">
     <div class="card">
 
-      <!-- SUMMARY -->
+      <!-- ===================== SUMMARY PANEL ===================== -->
       <div class="panel active" id="panelSummary">
+
         <div class="section">
           <h2>Production Issue Analysis</h2>
-          <p style="margin-top:8px;color:var(--muted)">
-            Paste an error or log snippet. ProdSight correlates ServiceNow, Mail, and Server Logs.
+          <p>
+            Paste an error or log snippet. ProdSight correlates ServiceNow, Mail, and Server Logs (internal-first evidence).
           </p>
         </div>
 
@@ -256,8 +271,31 @@
           <span class="mono">POST /analyze</span>
         </div>
 
+        <!-- Client Demo Mode -->
+        <div class="section" style="margin-top:12px">
+          <h2>Client Demo Mode</h2>
+          <p>
+            When enabled, ProdSight hides sensitive evidence fields and uses safe demo formatting for client showcase.
+          </p>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <label style="margin:0;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <input id="demoToggle" type="checkbox" onchange="applyDemoMode()" />
+              <span style="font-weight:900">Client Demo Mode (redacted)</span>
+            </label>
+
+            <span class="mono" style="color:var(--muted)">• One-click sample errors for demo flow</span>
+          </div>
+
+          <div class="buttons" style="justify-content:flex-start;margin-top:12px">
+            <button class="ghost" onclick="loadSample(1)">Sample: Java NPE</button>
+            <button class="ghost" onclick="loadSample(2)">Sample: OOM</button>
+            <button class="ghost" onclick="loadSample(3)">Sample: Timeout</button>
+          </div>
+        </div>
+
         <div class="blocks">
-          <div class="block" onclick="switchTab('details')">
+          <div class="block" id="blkSN" onclick="openDetails('servicenow')">
             <div class="blockTop">
               <div class="blockTitle">ServiceNow</div>
               <div class="badge" id="badgeSN">—</div>
@@ -269,7 +307,7 @@
             </div>
           </div>
 
-          <div class="block" onclick="switchTab('details')">
+          <div class="block" id="blkMail" onclick="openDetails('mail')">
             <div class="blockTop">
               <div class="blockTitle">Mail</div>
               <div class="badge" id="badgeMail">—</div>
@@ -281,7 +319,7 @@
             </div>
           </div>
 
-          <div class="block" onclick="switchTab('details')">
+          <div class="block" id="blkLogs" onclick="openDetails('server_logs')">
             <div class="blockTop">
               <div class="blockTitle">Server Logs</div>
               <div class="badge" id="badgeLogs">—</div>
@@ -293,19 +331,20 @@
             </div>
           </div>
         </div>
+
       </div>
 
-      <!-- DETAILS -->
+      <!-- ===================== DETAILS PANEL ===================== -->
       <div class="panel" id="panelDetails">
         <div class="section">
           <h2>Detailed Evidence</h2>
-          <p style="margin-top:8px;color:var(--muted)">
-            Full correlation output from ServiceNow, Mail, and Server Logs.
+          <p>
+            Full correlation output from ServiceNow, Mail, and Server Logs. In Client Demo Mode, sensitive fields are redacted.
           </p>
         </div>
 
         <div class="section">
-          <pre id="detailsOut" class="mono">Run analysis to view details.</pre>
+          <pre id="detailsOut" class="pre">Run analysis to view details.</pre>
         </div>
 
         <div class="buttons">
@@ -323,37 +362,200 @@
 </div>
 
 <script>
+  // ===================== CONFIG =====================
+  // Replace with your Render backend URL
   const API_BASE = "https://YOUR-RENDER-BACKEND.onrender.com";
+  const ANALYZE_URL = API_BASE + "/analyze";
+
+  // ===================== STATE =====================
+  let DEMO_MODE = false;
+  let lastPayload = null;
+
+  const SAMPLES = {
+    1: "java.lang.NullPointerException at com.company.billing.InvoiceService.processInvoice(InvoiceService.java:214)",
+    2: "java.lang.OutOfMemoryError: Java heap space during batch job recon-nightly",
+    3: "java.net.SocketTimeoutException: Read timed out calling https://upstream.api/orders"
+  };
+
+  function loadSample(n){
+    document.getElementById("inp").value = SAMPLES[n] || "";
+    document.getElementById("status").textContent = "Status: Sample loaded";
+  }
+
+  function applyDemoMode(){
+    DEMO_MODE = !!document.getElementById("demoToggle").checked;
+
+    if(lastPayload){
+      renderSummary(lastPayload);
+      renderDetails(lastPayload);
+    }
+
+    document.getElementById("status").textContent = DEMO_MODE
+      ? "Status: Client Demo Mode ON (redacted)"
+      : "Status: Client Demo Mode OFF";
+  }
+
+  // ===================== TABS =====================
+  function switchTab(which){
+    document.getElementById("tabSummary").classList.toggle("active", which==="summary");
+    document.getElementById("tabDetails").classList.toggle("active", which==="details");
+    document.getElementById("panelSummary").classList.toggle("active", which==="summary");
+    document.getElementById("panelDetails").classList.toggle("active", which==="details");
+  }
+
+  function openDetails(which){
+    switchTab("details");
+    // we keep it simple: details is one combined JSON output
+    // can be upgraded to per-section scroll later if needed
+  }
+
+  // ===================== REDACTION (Client Demo Mode) =====================
+  function redactText(s){
+    if(!s) return s;
+    s = String(s);
+
+    // Email addresses
+    s = s.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]");
+
+    // Log paths
+    s = s.replace(/\/var\/log\/[A-Za-z0-9_\-./]+/g, "[redacted-log-path]");
+
+    // Correlation IDs like CORR-...
+    s = s.replace(/\bCORR-[A-Z0-9\-]+\b/g, "[redacted-correlation-id]");
+
+    // Internal-ish domains
+    s = s.replace(/\b[a-z0-9.-]*\.(local|corp|internal)\b/gi, "[redacted-host]");
+
+    return s;
+  }
+
+  function maybeRedact(obj){
+    if(!DEMO_MODE) return obj;
+
+    const walk = (x) => {
+      if(x === null || x === undefined) return x;
+      if(typeof x === "string") return redactText(x);
+      if(Array.isArray(x)) return x.map(walk);
+      if(typeof x === "object"){
+        const out = {};
+        for(const k of Object.keys(x)){
+          if(k === "excerpt") out[k] = "[redacted-excerpt]";
+          else out[k] = walk(x[k]);
+        }
+        return out;
+      }
+      return x;
+    };
+    return walk(obj);
+  }
+
+  // ===================== UI HELPERS =====================
+  function setBadge(el, found){
+    el.classList.remove("ok","no");
+    if(found){
+      el.classList.add("ok");
+      el.textContent = "Found";
+    } else {
+      el.classList.add("no");
+      el.textContent = "Not Found";
+    }
+  }
+
+  function fmtConf(x){
+    if(x === null || x === undefined || x === "") return "";
+    const n = Number(x);
+    if(Number.isNaN(n)) return "";
+    return "confidence=" + n.toFixed(3);
+  }
+
+  // ===================== RENDERERS =====================
+  function renderSummary(payload){
+    const p = maybeRedact(payload);
+
+    const sn = p.servicenow || {};
+    const ml = p.mail || {};
+    const lg = p.server_logs || {};
+
+    setBadge(document.getElementById("badgeSN"), !!sn.found);
+    setBadge(document.getElementById("badgeMail"), !!ml.found);
+    setBadge(document.getElementById("badgeLogs"), !!lg.found);
+
+    document.getElementById("sumSN").textContent   = sn.summary || "";
+    document.getElementById("sumMail").textContent = ml.summary || "";
+    document.getElementById("sumLogs").textContent = lg.summary || "";
+
+    // show confidence lines if present
+    document.getElementById("confSN").textContent   = fmtConf(sn.confidence);
+    document.getElementById("confMail").textContent = fmtConf(ml.confidence);
+    document.getElementById("confLogs").textContent = fmtConf(lg.confidence);
+  }
+
+  function renderDetails(payload){
+    const p = maybeRedact(payload);
+
+    const out = DEMO_MODE
+      ? { mode: "Client Demo Mode (redacted)", details: (p.details || {}) }
+      : {
+          servicenow: p.servicenow,
+          mail: p.mail,
+          server_logs: p.server_logs,
+          fallback: p.fallback,
+          details: p.details
+        };
+
+    document.getElementById("detailsOut").textContent = JSON.stringify(out, null, 2);
+  }
+
+  // ===================== MAIN ACTION =====================
   async function runAnalyze(){
-    const t = document.getElementById("inp").value.trim();
-    if(!t) return;
-    document.getElementById("status").textContent="Status: Analyzing…";
+    const status = document.getElementById("status");
+    const text = (document.getElementById("inp").value || "").trim();
+    if(!text){
+      status.textContent = "Status: Please paste an error first.";
+      return;
+    }
 
-    const r = await fetch(API_BASE+"/analyze",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({error_text:t})
-    });
-    const d = await r.json();
+    status.textContent = "Status: Analyzing…";
 
-    document.getElementById("sumSN").textContent = d.servicenow.summary;
-    document.getElementById("sumMail").textContent = d.mail.summary;
-    document.getElementById("sumLogs").textContent = d.server_logs.summary;
+    try{
+      const r = await fetch(ANALYZE_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ error_text: text })
+      });
 
-    document.getElementById("detailsOut").textContent =
-      JSON.stringify(d.details,null,2);
+      if(!r.ok){
+        const t = await r.text();
+        throw new Error(t || ("HTTP " + r.status));
+      }
 
-    document.getElementById("status").textContent="Status: Done";
+      const data = await r.json();
+      lastPayload = data;
+
+      renderSummary(data);
+      renderDetails(data);
+
+      status.textContent = DEMO_MODE
+        ? "Status: Done (Client Demo Mode ON)"
+        : "Status: Done";
+    }catch(e){
+      status.textContent = "Status: Error";
+      document.getElementById("detailsOut").textContent = String(e && e.message ? e.message : e);
+    }
   }
+
   function clearAll(){
-    document.getElementById("inp").value="";
-    document.getElementById("status").textContent="Status: Idle";
-  }
-  function switchTab(x){
-    document.getElementById("panelSummary").classList.toggle("active",x==="summary");
-    document.getElementById("panelDetails").classList.toggle("active",x==="details");
-    document.getElementById("tabSummary").classList.toggle("active",x==="summary");
-    document.getElementById("tabDetails").classList.toggle("active",x==="details");
+    document.getElementById("inp").value = "";
+    document.getElementById("status").textContent = "Status: Idle";
+    document.getElementById("sumSN").textContent = "Awaiting analysis.";
+    document.getElementById("sumMail").textContent = "Awaiting analysis.";
+    document.getElementById("sumLogs").textContent = "Awaiting analysis.";
+    document.getElementById("confSN").textContent = "";
+    document.getElementById("confMail").textContent = "";
+    document.getElementById("confLogs").textContent = "";
+    document.getElementById("detailsOut").textContent = "Run analysis to view details.";
+    lastPayload = null;
+    switchTab("summary");
   }
 </script>
 </body>
